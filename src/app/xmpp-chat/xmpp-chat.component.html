@@ -1,12 +1,12 @@
 <div class="chat">
-  <div class="chat-window">
+  <div class="chat-window" #chatWindow>
     <div
       *ngFor="let msg of messages; let index = index"
       class="message"
       [class.sent]="msg.type === 'sent'"
       [class.received]="msg.type === 'received'"
     >
-      <div [innerHtml]="msg.text"></div>
+      <div [innerHtml]="msg.message"></div>
     </div>
   </div>
   <div class="input-area">
