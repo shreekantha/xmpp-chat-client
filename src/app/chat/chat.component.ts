@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
+import { log } from 'console';
 import * as XMPP from 'stanza';
+
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  selector: 'app-chat',
+  templateUrl: './chat.component.html',
+  styleUrls: ['./chat.component.css']
 })
-export class AppComponent implements OnInit {
-  title = 'xmpp-chat';
+export class ChatComponent implements OnInit {
 
   messages = [];
   inputMessage = '';
@@ -14,7 +15,7 @@ export class AppComponent implements OnInit {
 
   constructor() {
     this.client = XMPP.createClient({
-      jid: 'shree@chat.emagna.in',
+      jid: 'vaishu@chat.emagna.in',
       password: '123',
       transports: {
         // websocket: 'ws://localhost:5222/xmpp-websocket',
@@ -27,7 +28,13 @@ export class AppComponent implements OnInit {
       this.client.sendPresence();
       this.client.on('message', (msg) => {
         console.log('on chat:', msg);
-        this.handleIncomingMessage(msg);
+        const messageWithLinks = msg.body.replace(
+          /((http|https):\/\/[^\s]+)/g,
+          '<a href="$1" target="_blank">$1</a>'
+        );
+        this.messages.push({ type: 'received', text: messageWithLinks });
+        console.log("from shree:incoming message:",msg)
+        // this.handleIncomingMessage(msg);
       });
     });
   }
@@ -48,6 +55,7 @@ export class AppComponent implements OnInit {
       '<a href="$1" target="_blank">$1</a>'
     );
     this.messages.push({ type: 'received', text: messageWithLinks });
+    console.log("from shree:incoming message:",msg)
   }
 
   handleInputChange(event) {
@@ -56,14 +64,13 @@ export class AppComponent implements OnInit {
 
   handleSendMessage() {
     const formattedMessage = this.inputMessage;
-
     this.messages.push({ type: 'sent', text: formattedMessage });
-
     // Send message using XMPP
     this.client.sendMessage({
-      to: 'vaishu@emagnavm1.cs29d9cloud.internal', // Replace with the appropriate recipient JID
+      to: 'shree@emagnavm1.cs29d9cloud.internal', // Replace with the appropriate recipient JID
       body: this.inputMessage
     });
   }
+
 
 }

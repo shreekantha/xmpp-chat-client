@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import * as XMPP from 'stanza';
+
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  selector: 'app-xmpp-chat',
+  templateUrl: './xmpp-chat.component.html',
+  styleUrls: ['./xmpp-chat.component.css']
 })
-export class AppComponent implements OnInit {
-  title = 'xmpp-chat';
+export class XmppChatComponent implements OnInit {
 
   messages = [];
   inputMessage = '';
@@ -27,7 +27,14 @@ export class AppComponent implements OnInit {
       this.client.sendPresence();
       this.client.on('message', (msg) => {
         console.log('on chat:', msg);
-        this.handleIncomingMessage(msg);
+        const senderName = this.getSenderNameFromJID(msg.from);
+        const messageWithLinks = msg.body.replace(
+          /((http|https):\/\/[^\s]+)/g,
+          '<a href="$1" target="_blank">$1</a>'
+        );
+        this.messages.push({ type: 'received', text: messageWithLinks });
+        console.log("from vaishu:incoming message:",msg)
+        // this.handleIncomingMessage(msg);
       });
     });
   }
@@ -48,6 +55,8 @@ export class AppComponent implements OnInit {
       '<a href="$1" target="_blank">$1</a>'
     );
     this.messages.push({ type: 'received', text: messageWithLinks });
+    console.log("from vaishu:incoming message:",msg)
+
   }
 
   handleInputChange(event) {
@@ -65,5 +74,6 @@ export class AppComponent implements OnInit {
       body: this.inputMessage
     });
   }
+
 
 }

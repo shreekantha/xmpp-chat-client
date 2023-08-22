@@ -1,0 +1,37 @@
+.chat{
+    width: 300px;
+    border: 1px solid red;
+    float: right;
+}
+
+.chat-window {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+  
+  .message {
+    max-width: 70%;
+    padding: 5px 10px;
+    border-radius: 10px;
+  }
+  
+  .sent {
+    align-self: flex-end;
+    background-color: #c5e1a5; /* Light green */
+  }
+  
+  .received {
+    align-self: flex-start;
+    background-color: #e0e0e0; /* Light gray */
+  }
+  
+  .input-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-top: 1px solid #ccc;
+  }
+  

@@ -1,0 +1,20 @@
+<div class="chat">
+  <div class="chat-window">
+    <div
+      *ngFor="let msg of messages; let index = index"
+      class="message"
+      [class.sent]="msg.type === 'sent'"
+      [class.received]="msg.type === 'received'"
+    >
+      <div [innerHtml]="msg.text"></div>
+    </div>
+  </div>
+  <div class="input-area">
+    <input
+      type="text"
+      [(ngModel)]="inputMessage"
+      placeholder="Type a message..."
+    />
+    <button (click)="handleSendMessage()">Send</button>
+  </div>
+</div>
