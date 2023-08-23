@@ -13,27 +13,15 @@ export class AppComponent implements OnInit {
   client: any; // Type properly based on the XMPP library types
 
   constructor() {
-    this.client = XMPP.createClient({
-      jid: 'shree@chat.emagna.in',
-      password: '123',
-      transports: {
-        // websocket: 'ws://localhost:5222/xmpp-websocket',
-        bosh: 'https://chat.emagna.in/http-bind'
-      }
-    });
-
-    this.client.on('session:started', () => {
-      this.client.getRoster();
-      this.client.sendPresence();
-      this.client.on('message', (msg) => {
-        console.log('on chat:', msg);
-        this.handleIncomingMessage(msg);
-      });
-    });
+    // const user={
+    //   username:"shree",
+    //   ofp:"123"
+    // }
+    // localStorage.setItem("openfireUser",JSON.stringify(user))
   }
 
   ngOnInit() {
-    this.client.connect();
+    // this.client.connect();
   }
 
   getSenderNameFromJID(jid) {
@@ -50,20 +38,20 @@ export class AppComponent implements OnInit {
     this.messages.push({ type: 'received', text: messageWithLinks });
   }
 
-  handleInputChange(event) {
-    this.inputMessage = event.target.value;
-  }
+  // handleInputChange(event) {
+  //   this.inputMessage = event.target.value;
+  // }
 
-  handleSendMessage() {
-    const formattedMessage = this.inputMessage;
+  // handleSendMessage() {
+  //   const formattedMessage = this.inputMessage;
 
-    this.messages.push({ type: 'sent', text: formattedMessage });
+  //   this.messages.push({ type: 'sent', text: formattedMessage });
 
-    // Send message using XMPP
-    this.client.sendMessage({
-      to: 'vaishu@emagnavm1.cs29d9cloud.internal', // Replace with the appropriate recipient JID
-      body: this.inputMessage
-    });
-  }
+  //   // Send message using XMPP
+  //   this.client.sendMessage({
+  //     to: 'vaishu@emagnavm1.cs29d9cloud.internal', // Replace with the appropriate recipient JID
+  //     body: this.inputMessage
+  //   });
+  // }
 
 }

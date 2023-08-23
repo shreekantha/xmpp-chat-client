@@ -1,5 +1,54 @@
-<div class="chat">
-  <div class="chat-window" #chatWindow>
+<div class="container">
+
+  <div class="row">
+    <div class="col-md-4 contacts">
+      <div class="card">
+        <div class="card-header">
+          <p>
+            {{openfireUser?.name}}
+          </p>
+          <hr>
+          <div>
+            <input [(ngModel)]="searchUser" class="form-control" type="text" placeholder="Search..." (input)="search($event)" />
+            <div class="users list-group" *ngIf="users.length">
+              <button class="list-group-item list-group-item-action" (click)="selectUser(u)" *ngFor="let u of users">
+                {{u.name}}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card-body"></div>
+      </div>
+
+    </div>
+
+    <div class="col-md-8 chat">
+      <div class="card">
+        <div class="card-header">{{selectedUser?.name}}</div>
+        <div class="card-body">
+          <div class="chat-window" #chatWindow>
+            <div *ngFor="let msg of messages; let index = index" class="message" [class.sent]="msg.type === 'sent'"
+              [class.received]="msg.type === 'received'">
+              <div [innerHtml]="msg.message"></div>
+              <span>{{msg.date}}</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="row">
+            <div class="col-sm-10">
+              <input class="form-control" type="text" [(ngModel)]="inputMessage" placeholder="Type a message..." />
+            </div>
+            <div class="col-sm-2">
+              <button (click)="handleSendMessage()" class="btn btn-primary">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- <div class="chat-window" #chatWindow>
     <div
       *ngFor="let msg of messages; let index = index"
       class="message"
@@ -16,5 +65,7 @@
       placeholder="Type a message..."
     />
     <button (click)="handleSendMessage()">Send</button>
+  </div> -->
+    </div>
   </div>
 </div>

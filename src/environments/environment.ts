@@ -3,7 +3,10 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  openfireDomain:"http://localhost:7444/http-bind",
+  // openfireFQDN:"emagnavm1.cs29d9cloud.internal"
+  openfireFQDN:"localhost"
 };
 
 /*

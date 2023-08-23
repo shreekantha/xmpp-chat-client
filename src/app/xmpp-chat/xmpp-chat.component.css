@@ -1,6 +1,16 @@
+.chat-container{
+  width: 100%;
+
+}
+.contacts{
+  width: 25%;
+  /* border: 1px solid blue; */
+float: left;
+height: 600px;
+}
 .chat{
-    width: 300px;
-    border: 1px solid red;
+    width: 70%;
+    /* border: 1px solid blue; */
     float: right;
     
 }

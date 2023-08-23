@@ -1,32 +1,40 @@
 import { AfterViewChecked, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { environment } from 'src/environments/environment';
 import * as XMPP from 'stanza';
+import { XmppService } from './xmpp.service';
 
 @Component({
   selector: 'app-xmpp-chat',
   templateUrl: './xmpp-chat.component.html',
   styleUrls: ['./xmpp-chat.component.css']
 })
-export class XmppChatComponent implements OnInit,AfterViewChecked {
+export class XmppChatComponent implements OnInit, AfterViewChecked {
   @ViewChild('chatWindow') private messageContainerRef: ElementRef;
   messages = [];
   inputMessage = '';
   client: any; // Type properly based on the XMPP library types
-
-  constructor(private cdRef: ChangeDetectorRef) {
+  users = [];
+  selectedUser:any;
+  openfireUser:any;
+  searchUser:any;
+  constructor(private cdRef: ChangeDetectorRef, private xmppService: XmppService) {
+     this.openfireUser=JSON.parse(localStorage.getItem("openfireUser"));
     this.client = XMPP.createClient({
-      jid: 'shree@chat.emagna.in',
-      password: '123',
+      // jid: `shree@${environment.openfireFQDN}`,
+      jid: `${this.openfireUser.username}@${environment.openfireFQDN}`,
+      password: this.openfireUser.ofp,
+      resource:this.openfireUser.username,
       transports: {
         // websocket: 'ws://localhost:5222/xmpp-websocket',
-        bosh: 'https://chat.emagna.in/http-bind'
+        bosh: environment.openfireDomain
       }
     });
 
     this.client.on('session:started', () => {
       this.client.getRoster();
       this.client.sendPresence();
-      this.fetchChatHistory();
-      this.client.on('message', (msg) => {
+      // this.fetchChatHistory();
+      this.client.on('chat', (msg) => {
         // console.log('on chat:', msg);
 
         this.handleIncomingMessage(msg);
@@ -42,6 +50,22 @@ export class XmppChatComponent implements OnInit,AfterViewChecked {
     this.scrollToBottom();
   }
 
+  public search(event:any) {
+    this.xmppService.searchUsers(event.target.value).subscribe(result => {
+      console.log("contacts:", result);
+      this.users = result;
+    })
+  }
+
+  public selectUser(user){
+    this.selectedUser=user;
+    this.users=[];
+    this.searchUser='';
+    this.messages=[];
+    this.fetchChatHistory();
+
+  }
+
   scrollToBottom(): void {
     const container = this.messageContainerRef.nativeElement;
     container.scrollTop = container.scrollHeight;
@@ -49,20 +73,22 @@ export class XmppChatComponent implements OnInit,AfterViewChecked {
 
   fetchChatHistory = async () => {
     try {
-      const { results: history } = await this.client.searchHistory("shree@emagnavm1.cs29d9cloud.internal", { with: "vaishu@emagnavm1.cs29d9cloud.internal" });
+      const { results: history } = await this.client.searchHistory(`${this.openfireUser.username}@${environment.openfireFQDN}`, { with: `${this.selectedUser.username}@${environment.openfireFQDN}` });
       console.log("history:", history);
       this.messages = [];
 
       this.messages = history.map((item) => {
-        const { message } = item.item;
-        // console.log("Item:",message.body);
-        const messageWithLinks=message.body?message.body.replace(
+        const { message,delay } = item.item;
+        console.log("Item:",delay);
+        const messageWithLinks = message.body ? message.body.replace(
           /((http|https):\/\/[^\s]+)/g,
           '<a href="$1" target="_blank">$1</a>'
-        ):message.body;
+        ) : message.body;
+        
         const msg = {
           type: message.from.split('@')[0] === 'shree' ? 'sent' : 'received',
-          message: messageWithLinks
+          message: messageWithLinks,
+          date:delay.timestamp
         }
         return msg
       }
@@ -81,6 +107,7 @@ export class XmppChatComponent implements OnInit,AfterViewChecked {
   }
 
   handleIncomingMessage(msg) {
+    console.log("msg:",msg)
     const senderName = this.getSenderNameFromJID(msg.from);
     const messageWithLinks = msg.body.replace(
       /((http|https):\/\/[^\s]+)/g,
@@ -105,7 +132,7 @@ export class XmppChatComponent implements OnInit,AfterViewChecked {
 
     // Send message using XMPP
     this.client.sendMessage({
-      to: 'vaishu@emagnavm1.cs29d9cloud.internal', // Replace with the appropriate recipient JID
+      to: `${this.selectedUser.username}@${environment.openfireFQDN}`, // Replace with the appropriate recipient JID
       body: this.inputMessage
     });
     this.inputMessage = '';

@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { log } from 'console';
+import { environment } from 'src/environments/environment';
 import * as XMPP from 'stanza';
 
 @Component({
@@ -15,18 +16,19 @@ export class ChatComponent implements OnInit {
 
   constructor(private cdRef: ChangeDetectorRef) {
     this.client = XMPP.createClient({
-      jid: 'vaishu@chat.emagna.in',
+      jid: `vaishu@${environment.openfireFQDN}`,
       password: '123',
+      resource:"vaishu",
       transports: {
         // websocket: 'ws://localhost:5222/xmpp-websocket',
-        bosh: 'https://chat.emagna.in/http-bind'
+        bosh: environment.openfireDomain
       }
     });
 
     this.client.on('session:started', () => {
       this.client.getRoster();
       this.client.sendPresence();
-      this.fetchChatHistory()
+      // this.fetchChatHistory()
       this.client.on('message', (msg) => {
         // console.log('on chat:', msg);
       
@@ -97,7 +99,7 @@ export class ChatComponent implements OnInit {
     this.messages.push({ type: 'sent', message: formattedMessage });
     // Send message using XMPP
     this.client.sendMessage({
-      to: 'shree@emagnavm1.cs29d9cloud.internal', // Replace with the appropriate recipient JID
+      to: 'shree@localhost', // Replace with the appropriate recipient JID
       body: this.inputMessage
     });
     this.inputMessage='';
