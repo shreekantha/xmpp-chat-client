@@ -15,7 +15,8 @@ export class AppComponent implements OnInit {
   constructor() {
     // const user={
     //   username:"shree",
-    //   ofp:"123"
+    //   ofp:"123",
+    //   name:"Shreekanth"
     // }
     // localStorage.setItem("openfireUser",JSON.stringify(user))
   }

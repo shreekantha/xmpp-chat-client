@@ -4,9 +4,10 @@
 
 export const environment = {
   production: false,
-  openfireDomain:"http://localhost:7444/http-bind",
-  // openfireFQDN:"emagnavm1.cs29d9cloud.internal"
-  openfireFQDN:"localhost"
+  openfireDomain:"https://chat.emagna.in/http-bind",
+  openfireFQDN:"emagnavm1.cs29d9cloud.internal"
+  // openfireDomain:"http://localhost:7444/http-bind",
+  // openfireFQDN:"localhost"
 };
 
 /*

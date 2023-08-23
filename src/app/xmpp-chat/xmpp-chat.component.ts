@@ -11,19 +11,25 @@ import { XmppService } from './xmpp.service';
 export class XmppChatComponent implements OnInit, AfterViewChecked {
   @ViewChild('chatWindow') private messageContainerRef: ElementRef;
   messages = [];
+  groupedData={}
   inputMessage = '';
   client: any; // Type properly based on the XMPP library types
   users = [];
-  selectedUser:any;
-  openfireUser:any;
-  searchUser:any;
+  selectedUser: any;
+  openfireUser: any;
+  searchUser: any;
+  jsonKeyValue = {
+    property1: 'Value 1',
+    property2: 'Value 2',
+    // ... more properties
+  };
   constructor(private cdRef: ChangeDetectorRef, private xmppService: XmppService) {
-     this.openfireUser=JSON.parse(localStorage.getItem("openfireUser"));
+    this.openfireUser = JSON.parse(localStorage.getItem("openfireUser"));
     this.client = XMPP.createClient({
       // jid: `shree@${environment.openfireFQDN}`,
       jid: `${this.openfireUser.username}@${environment.openfireFQDN}`,
       password: this.openfireUser.ofp,
-      resource:this.openfireUser.username,
+      resource: this.openfireUser.username,
       transports: {
         // websocket: 'ws://localhost:5222/xmpp-websocket',
         bosh: environment.openfireDomain
@@ -34,7 +40,7 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
       this.client.getRoster();
       this.client.sendPresence();
       // this.fetchChatHistory();
-      this.client.on('chat', (msg) => {
+      this.client.on('message', (msg) => {
         // console.log('on chat:', msg);
 
         this.handleIncomingMessage(msg);
@@ -50,18 +56,18 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     this.scrollToBottom();
   }
 
-  public search(event:any) {
+  public search(event: any) {
     this.xmppService.searchUsers(event.target.value).subscribe(result => {
       console.log("contacts:", result);
       this.users = result;
     })
   }
 
-  public selectUser(user){
-    this.selectedUser=user;
-    this.users=[];
-    this.searchUser='';
-    this.messages=[];
+  public selectUser(user) {
+    this.selectedUser = user;
+    this.users = [];
+    this.searchUser = '';
+    this.messages = [];
     this.fetchChatHistory();
 
   }
@@ -78,22 +84,35 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
       this.messages = [];
 
       this.messages = history.map((item) => {
-        const { message,delay } = item.item;
-        console.log("Item:",delay);
+        const { message, delay } = item.item;
+        console.log("Item:", delay);
         const messageWithLinks = message.body ? message.body.replace(
           /((http|https):\/\/[^\s]+)/g,
           '<a href="$1" target="_blank">$1</a>'
         ) : message.body;
-        
         const msg = {
-          type: message.from.split('@')[0] === 'shree' ? 'sent' : 'received',
+          type: message.from.split('@')[0] === this.openfireUser.username ? 'sent' : 'received',
           message: messageWithLinks,
-          date:delay.timestamp
+          date: delay.timestamp
         }
         return msg
-      }
-      );
+      });
       // console.log("prep messages:", this.messages);
+
+       this.groupedData = {};
+
+      this.messages.forEach(item => {
+        this.groupByDate(item);
+        // const dateString = item.date.toISOString().substr(0, 10);
+        // if (!this.groupedData[dateString]) {
+        //   this.groupedData[dateString] = [];
+        // }
+        // this.groupedData[dateString].push(item);
+      });
+
+      console.log("prep messages:", this.groupedData);
+
+
       this.cdRef.detectChanges()
       this.scrollToBottom();
     } catch (error) {
@@ -101,19 +120,28 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     }
   };
 
+  groupByDate(item){
+    const dateString = item.date.toISOString().substr(0, 10);
+    if (!this.groupedData[dateString]) {
+      this.groupedData[dateString] = [];
+    }
+    this.groupedData[dateString].push(item);
+  }
+
   getSenderNameFromJID(jid) {
     const name = jid.split('@')[0];
     return name;
   }
 
   handleIncomingMessage(msg) {
-    console.log("msg:",msg)
+    console.log("msg:", msg)
     const senderName = this.getSenderNameFromJID(msg.from);
     const messageWithLinks = msg.body.replace(
       /((http|https):\/\/[^\s]+)/g,
       '<a href="$1" target="_blank">$1</a>'
     );
     this.messages.push({ type: 'received', message: messageWithLinks });
+    this.groupByDate({ type: 'received', message: messageWithLinks,date:new Date() })
     console.log("from vaishu:incoming message:", msg)
     this.cdRef.detectChanges()
 
@@ -128,6 +156,7 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     const formattedMessage = this.inputMessage;
 
     this.messages.push({ type: 'sent', message: formattedMessage });
+    this.groupByDate({ type: 'sent', message: formattedMessage,date:new Date() })
     this.cdRef.detectChanges()
 
     // Send message using XMPP
