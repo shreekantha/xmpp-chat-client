@@ -1,18 +1,14 @@
 .chat-container{
   width: 100%;
-
 }
 .contacts{
   width: 25%;
-  /* border: 1px solid blue; */
 float: left;
 height: 600px;
 }
 .chat{
     width: 70%;
-    /* border: 1px solid blue; */
-    float: right;
-    
+    float: right;    
 }
 
 .chat-window {
@@ -38,6 +34,13 @@ height: 600px;
     font-size: 0.75em;
     text-align: right;
     margin-top: 3px;
+  }
+
+  .search-users{
+    /* border: 1px red solid; */
+    position: fixed;
+    z-index: 1;
+    width: 310px;
   }
   
   .message {

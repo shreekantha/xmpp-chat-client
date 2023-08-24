@@ -10,14 +10,22 @@
           <hr>
           <div>
             <input [(ngModel)]="searchUser" class="form-control" type="text" placeholder="Search..." (input)="search($event)" />
-            <div class="users list-group" *ngIf="users.length">
+            <div class="search-users list-group" *ngIf="users.length">
               <button class="list-group-item list-group-item-action" (click)="selectUser(u)" *ngFor="let u of users">
-                {{u.name}}
+                <h5 class="card-title">{{u.name}}</h5>
+              <p class="card-text">{{u.jid}} </p>
               </button>
             </div>
           </div>
         </div>
-        <div class="card-body"></div>
+        <div class="card-body" >
+          <div class="list-group list-group-flush" >
+            <button class="list-group-item list-group-item-action" (click)="selectUser(contact)" *ngFor="let contact of contacts">
+              <h6>{{contact.name}}</h6>
+              <p class="card-text">{{contact.jid}} </p>
+            </button>
+          </div>
+        </div>
       </div>
 
     </div>

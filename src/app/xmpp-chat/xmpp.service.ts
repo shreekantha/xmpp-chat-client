@@ -12,17 +12,17 @@ export class XmppService {
     [
       {
         name:"Shreekanth",
-        username:"shree",
+        jid:"shree",
         openfirePwd:"123"
       },
       {
         name:"Poornima",
-        username:"poornima",
+        jid:"poornima",
         openfirePwd:"123"
       },
       {
         name:"Vaishnavi",
-        username:"vaishu",
+        jid:"vaishu",
         openfirePwd:"123"
       }
     ])

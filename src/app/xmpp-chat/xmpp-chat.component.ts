@@ -2,6 +2,8 @@ import { AfterViewChecked, ChangeDetectorRef, Component, ElementRef, OnInit, Vie
 import { environment } from 'src/environments/environment';
 import * as XMPP from 'stanza';
 import { XmppService } from './xmpp.service';
+import { log } from 'console';
+import { RosterSubscription } from 'stanza/Constants';
 
 @Component({
   selector: 'app-xmpp-chat',
@@ -11,38 +13,32 @@ import { XmppService } from './xmpp.service';
 export class XmppChatComponent implements OnInit, AfterViewChecked {
   @ViewChild('chatWindow') private messageContainerRef: ElementRef;
   messages = [];
-  groupedData={}
+  groupedData = {}
   inputMessage = '';
   client: any; // Type properly based on the XMPP library types
   users = [];
   selectedUser: any;
   openfireUser: any;
   searchUser: any;
-  jsonKeyValue = {
-    property1: 'Value 1',
-    property2: 'Value 2',
-    // ... more properties
-  };
+  contacts=[];
   constructor(private cdRef: ChangeDetectorRef, private xmppService: XmppService) {
     this.openfireUser = JSON.parse(localStorage.getItem("openfireUser"));
     this.client = XMPP.createClient({
       // jid: `shree@${environment.openfireFQDN}`,
-      jid: `${this.openfireUser.username}@${environment.openfireFQDN}`,
+      jid: `${this.openfireUser.jid}@${environment.openfireFQDN}`,
       password: this.openfireUser.ofp,
-      resource: this.openfireUser.username,
+      resource: this.openfireUser.jid,
       transports: {
         // websocket: 'ws://localhost:5222/xmpp-websocket',
         bosh: environment.openfireDomain
       }
     });
-
+    console.log("client:", this.client);
     this.client.on('session:started', () => {
-      this.client.getRoster();
+      this.getContacts();
       this.client.sendPresence();
       // this.fetchChatHistory();
       this.client.on('message', (msg) => {
-        // console.log('on chat:', msg);
-
         this.handleIncomingMessage(msg);
       });
     });
@@ -56,9 +52,35 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     this.scrollToBottom();
   }
 
+  getContacts(){
+    this.client.getRoster().then(roster => {
+      console.log("roster results:", roster.items)
+      this.contacts=roster.items;
+      this.cdRef.detectChanges();
+    });
+
+    // Listen for roster updates
+this.client.on('roster', (roster) => {
+  const contactJIDs = roster.map((item) => item.jid);
+console.log("roster:",roster)
+  // Subscribe to presence updates for all contacts
+  // contactJIDs.forEach((contactJID) => {
+  //   console.log("")
+  //   this.client.sendPresence({ to: contactJID });  // Request presence updates
+  // });
+});
+
+// Listen for presence updates
+this.client.on('presence', (presence) => {
+  console.log("presence:",presence)
+  // console.log(`Contact ${presence.from} Presence: ${presence.show}`);
+});
+  }
+
+  
   public search(event: any) {
     this.xmppService.searchUsers(event.target.value).subscribe(result => {
-      console.log("contacts:", result);
+      console.log("users:", result);
       this.users = result;
     })
   }
@@ -69,50 +91,48 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     this.searchUser = '';
     this.messages = [];
     this.fetchChatHistory();
-
+    // this.client.updateRosterItem({
+    //   jid:user.jid,
+    //   subscription: RosterSubscription.To,
+    //   name: user.name
+    // },(error) => {
+    //   if (!error) {
+    //     console.log(`Roster item updated successfully: ${user.jid}`);
+    //   } else {
+    //     console.error(`Error updating roster item: ${error}`);
+    //   }
+    // })
+    
   }
+
+
 
   scrollToBottom(): void {
     const container = this.messageContainerRef.nativeElement;
-    container.scrollTop = container.scrollHeight;
+    container.scrollTop = container.scrollHeight+10;
   }
 
   fetchChatHistory = async () => {
     try {
-      const { results: history } = await this.client.searchHistory(`${this.openfireUser.username}@${environment.openfireFQDN}`, { with: `${this.selectedUser.username}@${environment.openfireFQDN}` });
+      const { results: history } = await this.client.searchHistory(`${this.openfireUser.jid}@${environment.openfireFQDN}`, { with: `${this.selectedUser.jid}@${environment.openfireFQDN}` });
       console.log("history:", history);
       this.messages = [];
 
       this.messages = history.map((item) => {
         const { message, delay } = item.item;
-        console.log("Item:", delay);
-        const messageWithLinks = message.body ? message.body.replace(
-          /((http|https):\/\/[^\s]+)/g,
-          '<a href="$1" target="_blank">$1</a>'
-        ) : message.body;
+        const messageWithLinks = this.getMessageBody(message);
         const msg = {
-          type: message.from.split('@')[0] === this.openfireUser.username ? 'sent' : 'received',
+          type: message.from.split('@')[0] === this.openfireUser.jid ? 'sent' : 'received',
           message: messageWithLinks,
           date: delay.timestamp
         }
         return msg
       });
-      // console.log("prep messages:", this.messages);
-
-       this.groupedData = {};
-
+      this.groupedData = {};
       this.messages.forEach(item => {
         this.groupByDate(item);
-        // const dateString = item.date.toISOString().substr(0, 10);
-        // if (!this.groupedData[dateString]) {
-        //   this.groupedData[dateString] = [];
-        // }
-        // this.groupedData[dateString].push(item);
       });
-
       console.log("prep messages:", this.groupedData);
-
-
       this.cdRef.detectChanges()
       this.scrollToBottom();
     } catch (error) {
@@ -120,7 +140,14 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     }
   };
 
-  groupByDate(item){
+  getMessageBody(message) {
+    return message.body ? message.body.replace(
+      /((http|https):\/\/[^\s]+)/g,
+      '<a href="$1" target="_blank">$1</a>'
+    ) : message.body;
+  }
+
+  groupByDate(item) {
     const dateString = item.date.toISOString().substr(0, 10);
     if (!this.groupedData[dateString]) {
       this.groupedData[dateString] = [];
@@ -134,18 +161,12 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
   }
 
   handleIncomingMessage(msg) {
-    console.log("msg:", msg)
     const senderName = this.getSenderNameFromJID(msg.from);
-    const messageWithLinks = msg.body.replace(
-      /((http|https):\/\/[^\s]+)/g,
-      '<a href="$1" target="_blank">$1</a>'
-    );
+    const messageWithLinks = this.getMessageBody(msg);
     this.messages.push({ type: 'received', message: messageWithLinks });
-    this.groupByDate({ type: 'received', message: messageWithLinks,date:new Date() })
-    console.log("from vaishu:incoming message:", msg)
-    this.cdRef.detectChanges()
-
-
+    this.groupByDate({ type: 'received', message: messageWithLinks, date: new Date() })
+    this.cdRef.detectChanges();
+    this.scrollToBottom()
   }
 
   handleInputChange(event) {
@@ -154,14 +175,13 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
 
   handleSendMessage() {
     const formattedMessage = this.inputMessage;
-
     this.messages.push({ type: 'sent', message: formattedMessage });
-    this.groupByDate({ type: 'sent', message: formattedMessage,date:new Date() })
+    this.groupByDate({ type: 'sent', message: formattedMessage, date: new Date() })
     this.cdRef.detectChanges()
 
     // Send message using XMPP
     this.client.sendMessage({
-      to: `${this.selectedUser.username}@${environment.openfireFQDN}`, // Replace with the appropriate recipient JID
+      to: `${this.selectedUser.jid}@${environment.openfireFQDN}`, // Replace with the appropriate recipient JID
       body: this.inputMessage
     });
     this.inputMessage = '';
