@@ -42,6 +42,19 @@ height: 600px;
     z-index: 1;
     width: 310px;
   }
+
+  .user-image{
+    padding: 6px 3px 6px 3px;
+    border-radius: 50%;
+  }
+
+  .online{
+    border: 2px solid green;
+  }
+
+  .offline{
+    border: 2px solid gray;
+  }
   
   .message {
     max-width: 70%;

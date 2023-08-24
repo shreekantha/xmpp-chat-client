@@ -12,18 +12,21 @@ export class XmppService {
     [
       {
         name:"Shreekanth",
-        jid:"shree",
-        openfirePwd:"123"
+        jid:"shree@localhost",
+        openfirePwd:"123",
+        email:"shree@mail.com"
       },
       {
         name:"Poornima",
-        jid:"poornima",
-        openfirePwd:"123"
+        jid:"poornima@localhost",
+        openfirePwd:"123",
+        email:"poornima@mail.com"
       },
       {
         name:"Vaishnavi",
-        jid:"vaishu",
-        openfirePwd:"123"
+        jid:"vaishu@localhost",
+        openfirePwd:"123",
+        email:"vaishu@mail.com"
       }
     ])
   }

@@ -11,7 +11,7 @@
           <div>
             <input [(ngModel)]="searchUser" class="form-control" type="text" placeholder="Search..." (input)="search($event)" />
             <div class="search-users list-group" *ngIf="users.length">
-              <button class="list-group-item list-group-item-action" (click)="selectUser(u)" *ngFor="let u of users">
+              <button class="list-group-item list-group-item-action" (click)="selectUserFromSearch(u)" *ngFor="let u of users">
                 <h5 class="card-title">{{u.name}}</h5>
               <p class="card-text">{{u.jid}} </p>
               </button>
@@ -20,9 +20,18 @@
         </div>
         <div class="card-body" >
           <div class="list-group list-group-flush" >
-            <button class="list-group-item list-group-item-action" (click)="selectUser(contact)" *ngFor="let contact of contacts">
-              <h6>{{contact.name}}</h6>
-              <p class="card-text">{{contact.jid}} </p>
+            <button class="list-group-item list-group-item-action" (click)="selectUserFromContacts(contact)" *ngFor="let contact of contacts">
+             <div class="row">
+
+               <div class="col-sm-2">
+                 <img class="user-image" [class.online]="contact.status === 'Online'" [class.offline]="contact.status !== 'Online'"  src="https://chat.openai.com/_next/image?url=https%3A%2F%2Fs.gravatar.com%2Favatar%2F51e20a78bcb6a7f6b4ca89621c62f3bd%3Fs%3D480%26r%3Dpg%26d%3Dhttps%253A%252F%252Fcdn.auth0.com%252Favatars%252Fsh.png&w=32&q=75"/>
+                </div>
+                <div class="col-sm-9 user-detail">
+                  <h6 style="margin-bottom: 0.1rem;font-size: 1rem;">{{contact.name}}</h6>
+                  <p class="card-text">{{contact.jid}} </p>
+                </div>
+              </div>
+
             </button>
           </div>
         </div>
@@ -32,7 +41,19 @@
 
     <div class="col-md-8 chat">
       <div class="card">
-        <div class="card-header">{{selectedUser?.name}}</div>
+        <div class="card-header">
+          
+          <div class="row" *ngIf="selectedUser">
+
+            <div class="col-sm-1">
+              <img class="user-image"  src="https://chat.openai.com/_next/image?url=https%3A%2F%2Fs.gravatar.com%2Favatar%2F51e20a78bcb6a7f6b4ca89621c62f3bd%3Fs%3D480%26r%3Dpg%26d%3Dhttps%253A%252F%252Fcdn.auth0.com%252Favatars%252Fsh.png&w=32&q=75"/>
+             </div>
+             <div class="col-sm-9 user-detail">
+               <h6 style="margin-bottom: 0.1rem;font-size: 1rem;">{{selectedUser?.name}}</h6>
+               <p class="card-text">{{selectedUser?.jid}} </p>
+             </div>
+           </div>
+        </div>
         <div class="card-body">
           <div class="chat-window" #chatWindow>
             <div class="chat-content" *ngFor="let item of groupedData | keyvalue">

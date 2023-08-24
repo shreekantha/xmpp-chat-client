@@ -20,12 +20,13 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
   selectedUser: any;
   openfireUser: any;
   searchUser: any;
-  contacts=[];
+  contacts = [];
+
   constructor(private cdRef: ChangeDetectorRef, private xmppService: XmppService) {
     this.openfireUser = JSON.parse(localStorage.getItem("openfireUser"));
+
     this.client = XMPP.createClient({
-      // jid: `shree@${environment.openfireFQDN}`,
-      jid: `${this.openfireUser.jid}@${environment.openfireFQDN}`,
+      jid: `${this.openfireUser.jid}`,
       password: this.openfireUser.ofp,
       resource: this.openfireUser.jid,
       transports: {
@@ -33,13 +34,26 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
         bosh: environment.openfireDomain
       }
     });
-    console.log("client:", this.client);
+
     this.client.on('session:started', () => {
+
       this.getContacts();
-      this.client.sendPresence();
-      // this.fetchChatHistory();
+
+      this.client.sendPresence({
+        show: 'chat', // You are available for chat
+        status: 'Online'
+      });
+
       this.client.on('message', (msg) => {
         this.handleIncomingMessage(msg);
+      });
+
+      // Listen for presence updates
+      this.client.on('presence', (presence) => {
+        const from = presence.from.split("/")[0];
+        this.contacts.find(c => c.jid === from).status = presence.status;
+        console.log("contacts:",this.contacts)
+        this.cdRef.detectChanges();
       });
     });
   }
@@ -52,32 +66,14 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     this.scrollToBottom();
   }
 
-  getContacts(){
+  getContacts() {
     this.client.getRoster().then(roster => {
-      console.log("roster results:", roster.items)
-      this.contacts=roster.items;
+      this.contacts = roster.items;
       this.cdRef.detectChanges();
     });
-
-    // Listen for roster updates
-this.client.on('roster', (roster) => {
-  const contactJIDs = roster.map((item) => item.jid);
-console.log("roster:",roster)
-  // Subscribe to presence updates for all contacts
-  // contactJIDs.forEach((contactJID) => {
-  //   console.log("")
-  //   this.client.sendPresence({ to: contactJID });  // Request presence updates
-  // });
-});
-
-// Listen for presence updates
-this.client.on('presence', (presence) => {
-  console.log("presence:",presence)
-  // console.log(`Contact ${presence.from} Presence: ${presence.show}`);
-});
   }
 
-  
+
   public search(event: any) {
     this.xmppService.searchUsers(event.target.value).subscribe(result => {
       console.log("users:", result);
@@ -85,12 +81,12 @@ this.client.on('presence', (presence) => {
     })
   }
 
-  public selectUser(user) {
+  public selectUserFromSearch(user) {
     this.selectedUser = user;
     this.users = [];
     this.searchUser = '';
     this.messages = [];
-    this.fetchChatHistory();
+    this.fetchChatHistory(user.jid);
     // this.client.updateRosterItem({
     //   jid:user.jid,
     //   subscription: RosterSubscription.To,
@@ -102,19 +98,27 @@ this.client.on('presence', (presence) => {
     //     console.error(`Error updating roster item: ${error}`);
     //   }
     // })
-    
+
+  }
+
+  public selectUserFromContacts(user) {
+    this.selectedUser = user;
+    this.users = [];
+    this.searchUser = '';
+    this.messages = [];
+    this.fetchChatHistory(user.jid);
   }
 
 
 
   scrollToBottom(): void {
     const container = this.messageContainerRef.nativeElement;
-    container.scrollTop = container.scrollHeight+10;
+    container.scrollTop = container.scrollHeight + 10;
   }
 
-  fetchChatHistory = async () => {
+  fetchChatHistory = async (withJid) => {
     try {
-      const { results: history } = await this.client.searchHistory(`${this.openfireUser.jid}@${environment.openfireFQDN}`, { with: `${this.selectedUser.jid}@${environment.openfireFQDN}` });
+      const { results: history } = await this.client.searchHistory(`${this.openfireUser.jid}`, { with: withJid });
       console.log("history:", history);
       this.messages = [];
 
@@ -163,10 +167,14 @@ this.client.on('presence', (presence) => {
   handleIncomingMessage(msg) {
     const senderName = this.getSenderNameFromJID(msg.from);
     const messageWithLinks = this.getMessageBody(msg);
-    this.messages.push({ type: 'received', message: messageWithLinks });
-    this.groupByDate({ type: 'received', message: messageWithLinks, date: new Date() })
-    this.cdRef.detectChanges();
-    this.scrollToBottom()
+    const from = msg.from.split("/")[0];
+    console.log("incoming message:", msg,":from:",from)
+    if (this.selectedUser.jid === from) {
+      this.messages.push({ type: 'received', message: messageWithLinks });
+      this.groupByDate({ type: 'received', message: messageWithLinks, date: new Date() })
+      this.cdRef.detectChanges();
+      this.scrollToBottom()
+    }
   }
 
   handleInputChange(event) {
@@ -181,7 +189,7 @@ this.client.on('presence', (presence) => {
 
     // Send message using XMPP
     this.client.sendMessage({
-      to: `${this.selectedUser.jid}@${environment.openfireFQDN}`, // Replace with the appropriate recipient JID
+      to: `${this.selectedUser.jid}`, // Replace with the appropriate recipient JID
       body: this.inputMessage
     });
     this.inputMessage = '';
