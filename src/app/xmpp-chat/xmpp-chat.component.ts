@@ -52,8 +52,13 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
       this.client.on('presence', (presence) => {
         const from = presence.from.split("/")[0];
         this.contacts.find(c => c.jid === from).status = presence.status;
-        console.log("contacts:",this.contacts)
         this.cdRef.detectChanges();
+      });
+      // Listen for message receipts (read receipts)
+      this.client.on('receipt', (receipt) => {
+        if (receipt.type === 'read') {
+          console.log(`Message with ID ${receipt.id} has been read by ${receipt.from}`);
+        }
       });
     });
   }
@@ -190,7 +195,8 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     // Send message using XMPP
     this.client.sendMessage({
       to: `${this.selectedUser.jid}`, // Replace with the appropriate recipient JID
-      body: this.inputMessage
+      body: this.inputMessage,
+      receipt: true
     });
     this.inputMessage = '';
     this.scrollToBottom()
