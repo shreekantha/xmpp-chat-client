@@ -1,3 +1,4 @@
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import * as XMPP from 'stanza';
@@ -7,6 +8,23 @@ import * as XMPP from 'stanza';
 })
 export class XmppService {
  
+  constructor(private http:HttpClient){
+  }
+
+  upload(url:any,data:any,length?:any){
+    console.log("length content:",length);
+// let header=new HttpHeaders().set("Content-Length",length);
+// console.log("headers:",header);
+this.http.put(url,data).subscribe(resp=>{
+    console.log("upload resp:",resp);
+},error=>{
+    console.log("error:",error)
+});
+
+
+
+  }
+
   searchUsers(search:any){
     return of(
     [

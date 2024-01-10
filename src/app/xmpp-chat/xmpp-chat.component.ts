@@ -24,11 +24,11 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
 
   constructor(private cdRef: ChangeDetectorRef, private xmppService: XmppService) {
     this.openfireUser = JSON.parse(localStorage.getItem("openfireUser"));
-
     this.client = XMPP.createClient({
       jid: `${this.openfireUser.jid}`,
       password: this.openfireUser.ofp,
       resource: this.openfireUser.jid,
+
       transports: {
         // websocket: 'ws://localhost:5222/xmpp-websocket',
         bosh: environment.openfireDomain
@@ -36,18 +36,16 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     });
 
     this.client.on('session:started', () => {
-
       this.getContacts();
+      this.client.discoverICEServers();
 
       this.client.sendPresence({
         show: 'chat', // You are available for chat
         status: 'Online'
       });
-
       this.client.on('message', (msg) => {
         this.handleIncomingMessage(msg);
       });
-
       // Listen for presence updates
       this.client.on('presence', (presence) => {
         const from = presence.from.split("/")[0];
@@ -61,12 +59,71 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
         }
       });
     });
+
+    this.client.jingle.on('sentFile', function (session, metadata) {
+      console.log('sent', metadata);
+  });
+    this.client.jingle.on('receivedFile', function (session, file, metadata) {
+      //saveAs(file, metadata.name); // -- https://github.com/eligrey/FileSaver.js
+      console.log("metadata:",metadata,"==session:",session)
+      var href = document.getElementById('received');
+      href.setAttribute('href', URL.createObjectURL(file));
+      href.setAttribute('download', metadata.name);
+      var text =
+          'Click to download ' + metadata.name + ' (' + metadata.size + ' bytes)';
+      href.appendChild(document.createTextNode(text));
+      href.style.display = 'block';
+  });
+
   }
 
   ngOnInit() {
+    // document.getElementById('files').addEventListener('change', this.handleFileSelect, false);
     this.client.connect();
-  }
+  
 
+  }
+   handleFileSelect(evt) {
+    this.client.getDiscoItems().then(resp=>{
+      console.log("disco resp:",resp)
+     })
+     .catch(error=>{
+      console.log("disco erorr:",error);
+     })
+    //  this.client.getDiscoItems("httpfileupload.localhost").then(resp=>{
+    //   console.log("disco item resp:",resp)
+    //  })
+    //  .catch(error=>{
+    //   console.log("disco item erorr:",error);
+    //  })
+     this.client.getDiscoInfo("httpfileupload.localhost").then(resp=>{
+      console.log("disco info resp:",resp)
+     })
+     .catch(error=>{
+      console.log("disco info erorr:",error);
+     })
+
+    console.log("evt:",evt);
+    var file = evt.target.files[0]; // FileList object
+    // let slot=this.client.getUploadSlot("",{type:"", name:"",size:"",mediaType:""})
+    console.log("selected file",file)
+    this.client.getUploadSlot("httpfileupload.localhost",{ name:file.name,size:file.size})
+    .then(resp=>{
+      console.log("resp:",resp)
+
+      console.log("resp upload url:",resp.upload.url)
+      this.xmppService.upload(resp.upload.url,file,file.size)
+     })
+     .catch(error=>{
+      console.log("erorr:",error);
+     })
+
+    // console.log('file', file.name, file.size, file.type, file.lastModifiedDate);
+    // var jid = document.getElementById('filepeer').value;
+    // var sess = this.client.jingle.createFileTransferSession(this.selectedUser.jid);
+
+    // sess.start(file);
+}
   ngAfterViewChecked(): void {
     this.scrollToBottom();
   }
@@ -77,7 +134,6 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
       this.cdRef.detectChanges();
     });
   }
-
 
   public search(event: any) {
     this.xmppService.searchUsers(event.target.value).subscribe(result => {
@@ -102,8 +158,7 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     //   } else {
     //     console.error(`Error updating roster item: ${error}`);
     //   }
-    // })
-
+    // });
   }
 
   public selectUserFromContacts(user) {
@@ -113,7 +168,6 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     this.messages = [];
     this.fetchChatHistory(user.jid);
   }
-
 
 
   scrollToBottom(): void {
@@ -126,12 +180,12 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
       const { results: history } = await this.client.searchHistory(`${this.openfireUser.jid}`, { with: withJid });
       console.log("history:", history);
       this.messages = [];
-
       this.messages = history.map((item) => {
         const { message, delay } = item.item;
         const messageWithLinks = this.getMessageBody(message);
+        console.log("jid:",this.openfireUser.jid,":from:",message.from);
         const msg = {
-          type: message.from.split('@')[0] === this.openfireUser.jid ? 'sent' : 'received',
+          type: message.from=== this.openfireUser.jid+"/"+this.openfireUser.jid ? 'sent' : 'received',
           message: messageWithLinks,
           date: delay.timestamp
         }
@@ -190,8 +244,7 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
     const formattedMessage = this.inputMessage;
     this.messages.push({ type: 'sent', message: formattedMessage });
     this.groupByDate({ type: 'sent', message: formattedMessage, date: new Date() })
-    this.cdRef.detectChanges()
-
+    this.cdRef.detectChanges();
     // Send message using XMPP
     this.client.sendMessage({
       to: `${this.selectedUser.jid}`, // Replace with the appropriate recipient JID
@@ -199,9 +252,6 @@ export class XmppChatComponent implements OnInit, AfterViewChecked {
       receipt: true
     });
     this.inputMessage = '';
-    this.scrollToBottom()
-
+    this.scrollToBottom();
   }
-
-
 }

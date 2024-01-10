@@ -66,6 +66,7 @@
             [class.sent]="msg.type === 'sent'"
             [class.received]="msg.type === 'received'">
             <div [innerHtml]="msg.message"></div>
+            <a id="received"></a>
             <div class="chat-time">{{msg.date | date:"h:mm a"}}</div>
           </div>
         </div>
@@ -80,6 +81,7 @@
         <div class="card-footer">
           <div class="row">
             <div class="col-sm-10">
+              <input type="file" id="files" name="files" (change)="handleFileSelect($event)" />
               <input class="form-control" type="text" [(ngModel)]="inputMessage" placeholder="Type a message..." />
             </div>
             <div class="col-sm-2">
